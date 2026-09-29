@@ -29,12 +29,12 @@ function setSession(r) { session = { code: r.code, token: r.token }; localStorag
 
 // ---------- screens ----------
 function home() {
-  $app.innerHTML = `<div class="center"><h1>COUP</h1>
+  $app.innerHTML = `<div class="lobbywrap"><div class="center"><h1>COUP</h1>
     <input id="name" placeholder="Your name" maxlength="14" value="${esc(localStorage.getItem('coup-name') || '')}">
     <button class="primary" id="create">Create room</button>
     <div class="row"><input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase"><button id="join">Join</button></div>
     <div class="err">${esc(lastErr)}</div>
-    </div>`;
+    </div>${roles()}${rules()}</div>`;
   const nm = () => { const v = document.getElementById('name').value.trim(); localStorage.setItem('coup-name', v); return v; };
   const go = p => async () => { try { setSession(await p()); lastErr = ''; } catch (e) { lastErr = e.message; home(); } };
   document.getElementById('create').onclick = go(() => post('create', { name: nm() }));
