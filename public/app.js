@@ -45,7 +45,7 @@ const voiceBtn = s => (s.voice ? `<a href="${esc(s.voice)}" target="_blank" rel=
 
 function lobby() {
   const s = snap;
-  $app.innerHTML = `<div class="center"><div class="dim" style="text-align:center">Room code — share with friends</div>
+  $app.innerHTML = `<div class="lobbywrap"><div class="center"><div class="dim" style="text-align:center">Room code — share with friends</div>
     <div class="code">${s.code}</div>
     <ul class="plist">${s.lobby.map((p, i) => `<li><span>${esc(p.name)}${i === s.you ? ' (you)' : ''}${i === 0 ? ' ★' : ''}</span><span class="dim">${p.connected ? '' : 'offline '}
       ${s.host && i > 0 ? `<button data-kick="${i}">Remove</button>` : ''}</span></li>`).join('')}</ul>
@@ -54,7 +54,7 @@ function lobby() {
       <div class="row"><span class="dim" style="flex:1">Challenge window: <b id="wl">${s.windowSec}</b>s</span><input id="win" type="range" min="4" max="30" value="${s.windowSec}" style="flex:2"></div>
       <div class="row"><button id="bot" ${s.lobby.length >= 6 ? 'disabled' : ''}>+ Add bot</button>
       <button class="primary" id="start" ${s.lobby.length < 2 ? 'disabled' : ''}>Start game</button></div>` : '<div class="dim" style="text-align:center">Waiting for host to start…</div>'}
-    <div class="row"><button id="leave">Leave</button></div></div>`;
+    <div class="row"><button id="leave">Leave</button></div></div>${roles()}${rules()}</div>`;
   document.getElementById('leave').onclick = () => { leave(); render(); };
   if (s.host) {
     document.getElementById('setvoice').onclick = () => send('settings', { voice: document.getElementById('voice').value });
@@ -154,6 +154,10 @@ function game() {
     const upd = () => { bar.style.width = Math.max(0, (end - Date.now()) / total * 100) + '%'; };
     upd(); barTimer = setInterval(upd, 100);
   } else clearInterval(barTimer);
+}
+
+function roles() {
+  return `<section class="roles">${Coup.CHARS.map(c => `<img src="img/${c}.png" alt="${cap(c)}" title="${cap(c)}">`).join('')}</section>`;
 }
 
 function rules() {

@@ -54,4 +54,11 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 @media (max-width:560px) { .game { grid-template-columns:1fr; } .side { position:static; } .rules img { height:auto; width:100%; } .me .card { width:84px; } }
 .bar a { text-decoration:none; }
 .rules { display:flex; flex-direction:column; gap:8px; }
-.rules img { height:calc((100vh - 40px) / 3); width:auto; display:block; border-radius:6px; }
+:root { --rh:calc((100vh - 40px) / 3); }
+.rules img { height:var(--rh); width:auto; display:block; border-radius:6px; }
+
+.lobbywrap { display:flex; gap:16px; justify-content:center; align-items:flex-start; padding:12px; flex-wrap:wrap; }
+.lobbywrap .center { margin:4vh 0 0; width:420px; max-width:100%; }
+.roles { width:calc(var(--rh) * .85); display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.roles img { width:100%; height:auto; border-radius:6px; display:block; }
+@media (max-width:560px) { .roles { width:100%; } }
