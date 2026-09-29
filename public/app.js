@@ -116,17 +116,17 @@ function game() {
 
   const pickLose = myTurn && g.phase === 'lose';
   $app.innerHTML = `<div class="game"><div class="main">
-    <div class="opps">${opps.map(p => `<div class="seat ${g.turn === p.id ? 'turn' : ''} ${p.alive ? '' : 'out'} ${needTarget && p.alive ? 'target' : ''}" data-p="${p.id}">
+    <div class="bar"><b>Room ${snap.code}</b><span class="dim">Deck: ${g.deck}</span>${voiceBtn(snap)}
+      ${snap.host ? '<button id="restart">↻ Restart</button>' : ''}
+      ${snap.host ? snap.lobby.map((p, i) => (!p.bot && !p.connected && i ? `<button data-rep="${i}">Bot replaces ${esc(p.name)}</button>` : '')).join('') : ''}
+      <button id="leave" style="margin-left:auto">Leave</button></div>
+        <div class="opps">${opps.map(p => `<div class="seat ${g.turn === p.id ? 'turn' : ''} ${p.alive ? '' : 'out'} ${needTarget && p.alive ? 'target' : ''}" data-p="${p.id}">
       <div class="nm">${esc(p.name)}</div><div class="coins">🪙 ${p.coins}</div>${cardsHtml(p)}</div>`).join('')}</div>
     <div class="table"><div class="banner">${describe(g)}</div>${reactBar}<div class="prompt">${g.phase === 'exchange' || g.phase === 'action' ? '' : prompt}</div></div>
     <div class="mine me ${g.turn === g.you ? 'turn' : ''}"><div style="text-align:center"><div class="nm">${esc(me.name)} (you)</div><div class="coins">🪙 ${me.coins}</div>${cardsHtml(me, true, pickLose)}</div>
       ${g.phase === 'exchange' || g.phase === 'action' ? `<div style="flex:1;min-width:260px" class="prompt">${prompt}</div>` : ''}</div>
     </div>
-    <div class="side"><div class="row"><b style="flex:1">Room ${snap.code}</b><button id="leave">Leave</button></div>
-      ${snap.host ? '<button id="restart">↻ Restart game</button>' : ''}
-      ${voiceBtn(snap)}<div class="dim">Deck: ${g.deck} cards</div>
-      ${snap.host ? snap.lobby.map((p, i) => (!p.bot && !p.connected && i ? `<button data-rep="${i}">Bot replaces ${esc(p.name)}</button>` : '')).join('') : ''}
-    ${rules()}</div></div>`;
+    <div class="side">${rules()}</div></div>`;
 
   const q = s => document.querySelectorAll(s);
   q('[data-act]').forEach(b => b.onclick = () => {
@@ -157,7 +157,7 @@ function game() {
 }
 
 function rules() {
-  return `<section class="rules"><b>Rules</b>
+  return `<section class="rules">
     <img src="img/actions-reference.png" alt="Actions"><img src="img/reactions-reference.png" alt="Reactions"><img src="img/reminders-reference.png" alt="Reminders"></section>`;
 }
 
