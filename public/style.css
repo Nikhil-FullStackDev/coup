@@ -53,12 +53,13 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .bar a { text-decoration:none; }
 
 
-.lobbywrap { overflow:hidden; display:flex; flex-direction:column; gap:16px; justify-content:flex-start; align-items:center; padding:12px; height:100vh; height:100dvh; box-sizing:border-box; overflow:hidden; }
+.lobbywrap { display:flex; flex-direction:row; gap:24px; justify-content:center; align-items:center; padding:12px; height:100vh; height:100dvh; box-sizing:border-box; overflow:hidden; }
 .lobbywrap .center h1 { font-size:24px; }
-.lobbywrap .center { margin:0; flex:0 0 auto; padding:14px 24px; gap:8px; width:420px; max-width:100%; }
-.info { --sh:min(500px, calc((100vh - 30px) / 2)); display:flex; flex-direction:column; gap:10px; width:340px; max-width:100%; }
-.lobbywrap .info { flex:1 1 0; min-height:0; flex-direction:row; justify-content:center; width:auto; gap:24px; }
-.lobbywrap .slider { width:340px; max-width:100%; display:flex; flex-direction:column; min-height:0; }
+.lobbywrap .center { order:1; margin:0; flex:0 0 auto; padding:14px 24px; gap:8px; width:420px; max-width:100%; max-height:100%; overflow-y:auto; }
+.lobbywrap .info { display:contents; }
+.lobbywrap .slider { width:340px; height:min(100%, 720px); display:flex; flex-direction:column; min-height:0; }
+.lobbywrap .slider:nth-child(1) { order:0; }
+.lobbywrap .slider:nth-child(2) { order:2; }
 .lobbywrap .sl-body { flex:1; height:auto; min-height:0; }
 .game .info { position:sticky; top:12px; align-self:start; }
 .slider { padding:0; }
@@ -74,8 +75,9 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .slide { min-height:0; }
 .slide img { width:100%; height:100%; object-fit:contain; display:block; }
 @media (max-width:640px) {
-  .lobbywrap { height:auto; min-height:100vh; overflow:visible; }
-  .lobbywrap .info { flex:none; flex-direction:column; align-items:center; gap:14px; }
+  .lobbywrap { flex-direction:column; height:auto; min-height:100vh; overflow:visible; }
+  .lobbywrap .center { order:0; max-height:none; }
+  .lobbywrap .info { display:flex; flex:none; flex-direction:column; align-items:center; gap:14px; }
   .lobbywrap .slider { flex:none; height:440px; width:100%; max-width:340px; }
   .game { grid-template-columns:1fr; } .game .info { position:static; } .info { --sh:440px; width:100%; }
   .me .card { width:84px; }
