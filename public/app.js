@@ -96,7 +96,7 @@ function game() {
     if (g.can.passed) btns.push(`<span class="dim">Waiting for others…</span>`);
     else if (g.can.challenge) btns.push(`<button class="danger big" data-mv="challenge">Challenge</button><button class="big" data-mv="pass">No</button>`);
     else if (g.can.block) btns.push(`<button class="danger big" data-mv="block">Block</button><button class="big" data-mv="pass">No</button>`);
-    reactBar = `<div class="timer"><div id="bar" data-ms="${g.msLeft}" data-total="${g.windowMs}"></div></div>`;
+    reactBar = `<svg class="wline" aria-hidden="true"><rect pathLength="100" style="animation-duration:${g.windowMs}ms;animation-delay:-${Math.max(0, g.windowMs - g.msLeft)}ms"></rect></svg>`;
     prompt = btns.join('');
   } else if (myTurn && me.alive) {
     if (g.phase === 'action') {
@@ -124,7 +124,7 @@ function game() {
       <button id="leave" style="margin-left:auto">Leave</button></div>
         <div class="opps">${opps.map(p => `<div class="seat ${g.turn === p.id ? 'turn' : ''} ${p.alive ? '' : 'out'} ${needTarget && p.alive ? 'target' : ''}" data-p="${p.id}">
       <div class="nm">${esc(p.name)}</div><div class="coins">🪙 ${p.coins}</div>${cardsHtml(p)}</div>`).join('')}</div>
-    <div class="table"><div class="banner">${describe(g)}</div>${reactBar}<div class="prompt">${g.phase === 'exchange' || g.phase === 'action' ? '' : prompt}</div></div>
+    <div class="table"><div class="wbox">${reactBar}<div class="banner">${describe(g)}</div><div class="prompt">${g.phase === 'exchange' || g.phase === 'action' ? '' : prompt}</div></div></div>
     <div class="mine me ${g.turn === g.you ? 'turn' : ''}"><div style="text-align:center"><div class="nm">${esc(me.name)} (you)</div><div class="coins">🪙 ${me.coins}</div>${cardsHtml(me, true, pickLose)}</div>
       ${g.phase === 'exchange' || g.phase === 'action' ? `<div style="flex:1;min-width:260px" class="prompt">${prompt}</div>` : ''}</div>
     </div>
@@ -150,13 +150,6 @@ function game() {
   const rs = document.getElementById('restart'); if (rs) rs.onclick = () => { if (confirm('Restart the game with the same players?')) send('restart', {}); };
   document.getElementById('leave').onclick = () => { leave(); render(); };
   initSliders();
-  const bar = document.getElementById('bar');
-  if (bar) {
-    const end = Date.now() + +bar.dataset.ms, total = +bar.dataset.total;
-    clearInterval(barTimer);
-    const upd = () => { bar.style.width = Math.max(0, (end - Date.now()) / total * 100) + '%'; };
-    upd(); barTimer = setInterval(upd, 100);
-  } else clearInterval(barTimer);
 }
 
 const sliderPos = {};
@@ -183,7 +176,7 @@ function initSliders() {
   });
 }
 
-let lastPhaseKey = '', barTimer = null;
+let lastPhaseKey = '';
 function render() {
   if (!session || !snap) return home();
   const key = snap.game ? snap.game.phase + snap.game.turn + snap.game.stageNo : '';
