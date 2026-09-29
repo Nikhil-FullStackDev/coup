@@ -73,4 +73,10 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .slide { flex:0 0 100%; height:100%; scroll-snap-align:center; }
 .slide { min-height:0; }
 .slide img { width:100%; height:100%; object-fit:contain; display:block; }
-@media (max-width:640px) { .lobbywrap { height:auto; min-height:100vh; } .lobbywrap .info { flex-direction:column; align-items:center; } .lobbywrap .slider { height:420px; } .game { grid-template-columns:1fr; } .game .info { position:static; } .info { --sh:420px; width:100%; } }
+@media (max-width:640px) {
+  .lobbywrap { height:auto; min-height:100vh; overflow:visible; }
+  .lobbywrap .info { flex:none; flex-direction:column; align-items:center; gap:14px; }
+  .lobbywrap .slider { flex:none; height:440px; width:100%; max-width:340px; }
+  .game { grid-template-columns:1fr; } .game .info { position:static; } .info { --sh:440px; width:100%; }
+  .me .card { width:84px; }
+}
