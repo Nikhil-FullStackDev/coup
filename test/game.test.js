@@ -68,14 +68,17 @@ test('bots can play whole games to completion', () => {
   }
 });
 
-test('block during window: only target can block steal; actor accepts to end block', () => {
+test('steal: challenge stage, then only target may block; No from all ends block stage', () => {
   const s = mk(3), t = s.turn, o = (t + 1) % 3, x = (t + 2) % 3;
   Coup.act(s, t, { type: 'action', action: 'steal', target: o }, 0);
-  assert.deepStrictEqual(Coup.reactions(s, x).block, []);
-  assert.ok(Coup.reactions(s, x).challenge);
-  assert.ok(Coup.act(s, o, { type: 'block', char: 'captain' }, 0).ok);
+  assert.strictEqual(s.pending.stage, 'claim');
+  assert.ok(Coup.act(s, o, { type: 'block' }, 0).error);
+  Coup.act(s, o, { type: 'pass' }, 0); Coup.act(s, x, { type: 'pass' }, 0);
+  assert.strictEqual(s.pending.stage, 'block');
+  assert.ok(!Coup.reactions(s, x).block);
+  assert.ok(Coup.act(s, o, { type: 'block' }, 0).ok);
   assert.strictEqual(s.pending.stage, 'bchallenge');
-  Coup.act(s, t, { type: 'accept' }, 0);
+  Coup.act(s, t, { type: 'pass' }, 0); Coup.act(s, x, { type: 'pass' }, 0);
   assert.strictEqual(s.players[o].coins, 2);
   assert.strictEqual(s.phase, 'action');
 });

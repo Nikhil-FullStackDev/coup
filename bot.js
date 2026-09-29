@@ -41,26 +41,26 @@ function botMove(s, id) {
 function botReact(s, id) {
   const me = s.players[id], pd = s.pending, can = Coup.reactions(s, id);
   const hand = me.cards.filter(c => !c.dead).map(c => c.c);
-  const has = c => hand.includes(c);
   const foes = s.players.filter(p => p.alive && p.id !== id).length;
   if (pd.stage === 'bchallenge') {
-    const n = hand.filter(c => c === pd.block.char).length;
+    const n = hand.filter(c => pd.block.chars.includes(c)).length;
     return can.challenge && rnd(0.08 + n * 0.25 + (pd.actor === id ? 0.12 : 0)) ? { type: 'challenge' } : null;
   }
-  if (can.challenge) {
+  if (pd.stage === 'claim') {
+    if (!can.challenge) return null;
     const n = hand.filter(c => c === pd.claim).length;
     let p = 0.08 + n * 0.25;
     if (pd.action === 'assassinate' && pd.target === id) p = Math.max(p, 0.4);
     if (foes === 1) p += 0.15;
-    if (rnd(p)) return { type: 'challenge' };
+    return rnd(p) ? { type: 'challenge' } : null;
   }
-  if (can.block.length) {
-    const holds = can.block.find(has);
+  if (can.block) {
+    const holds = Coup.ACTIONS[pd.action].blockBy.some(c => hand.includes(c));
     let p;
     if (pd.action === 'aid') p = holds ? 0.7 : 0.05;
     else if (holds) p = 0.85;
     else p = pd.action === 'assassinate' ? (hand.length === 1 ? 0.6 : 0.4) : 0.15;
-    if (rnd(p)) return { type: 'block', char: holds || pick(can.block) };
+    if (rnd(p)) return { type: 'block' };
   }
   return null;
 }

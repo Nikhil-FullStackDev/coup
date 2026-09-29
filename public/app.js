@@ -34,12 +34,11 @@ function home() {
     <button class="primary" id="create">Create room</button>
     <div class="row"><input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase"><button id="join">Join</button></div>
     <div class="err">${esc(lastErr)}</div>
-    <button id="help">How to play</button></div>`;
+    </div>${rules()}`;
   const nm = () => { const v = document.getElementById('name').value.trim(); localStorage.setItem('coup-name', v); return v; };
   const go = p => async () => { try { setSession(await p()); lastErr = ''; } catch (e) { lastErr = e.message; home(); } };
   document.getElementById('create').onclick = go(() => post('create', { name: nm() }));
   document.getElementById('join').onclick = go(() => post('join', { name: nm(), code: document.getElementById('code').value }));
-  document.getElementById('help').onclick = help;
 }
 
 const voiceBtn = s => (s.voice ? `<a href="${esc(s.voice)}" target="_blank" rel="noopener noreferrer"><button style="width:100%">🎙 Join voice chat</button></a>` : '');
@@ -55,8 +54,7 @@ function lobby() {
       <div class="row"><span class="dim" style="flex:1">Challenge window: <b id="wl">${s.windowSec}</b>s</span><input id="win" type="range" min="4" max="30" value="${s.windowSec}" style="flex:2"></div>
       <div class="row"><button id="bot" ${s.lobby.length >= 6 ? 'disabled' : ''}>+ Add bot</button>
       <button class="primary" id="start" ${s.lobby.length < 2 ? 'disabled' : ''}>Start game</button></div>` : '<div class="dim" style="text-align:center">Waiting for host to start…</div>'}
-    <div class="row"><button id="help">How to play</button><button id="leave">Leave</button></div></div>`;
-  document.getElementById('help').onclick = help;
+    <div class="row"><button id="leave">Leave</button></div></div>${rules()}`;
   document.getElementById('leave').onclick = () => { leave(); render(); };
   if (s.host) {
     document.getElementById('setvoice').onclick = () => send('settings', { voice: document.getElementById('voice').value });
@@ -81,7 +79,7 @@ function describe(g) {
   if (g.phase === 'exchange') return `${nm(g.exch.player == null ? g.you : g.exch.player)} is exchanging`;
   let t = `${nm(pd.actor)}: <b>${Coup.LABEL[pd.action]}</b>${pd.target != null ? ' → ' + nm(pd.target) : ''}`;
   if (pd.claim) t += ` <span class="dim">(${cap(pd.claim)})</span>`;
-  if (pd.block) t += `<br>🛡 ${nm(pd.block.by)} blocks with <b>${cap(pd.block.char)}</b>`;
+  if (pd.block) t += `<br>🛡 ${nm(pd.block.by)} blocks <span class="dim">(${pd.block.chars.map(cap).join(' / ')})</span>`;
   return t;
 }
 
@@ -94,11 +92,8 @@ function game() {
   if (g.phase === 'window') {
     const btns = [];
     if (g.can.passed) btns.push(`<span class="dim">Waiting for others…</span>`);
-    else if (g.can.challenge || g.can.block.length) {
-      if (g.can.challenge) btns.push(`<button class="danger big" data-mv="challenge">Challenge</button>`);
-      g.can.block.forEach(c => btns.push(`<button class="big" data-block="${c}">Block · ${cap(c)}</button>`));
-      btns.push(`<button class="big" data-mv="pass">No</button>`);
-    }
+    else if (g.can.challenge) btns.push(`<button class="danger big" data-mv="challenge">Challenge</button><button class="big" data-mv="pass">No</button>`);
+    else if (g.can.block) btns.push(`<button class="danger big" data-mv="block">Block</button><button class="big" data-mv="pass">No</button>`);
     reactBar = `<div class="timer"><div id="bar" data-ms="${g.msLeft}" data-total="${g.windowMs}"></div></div>`;
     prompt = btns.join('');
   } else if (myTurn && me.alive) {
@@ -127,10 +122,11 @@ function game() {
     <div class="mine me ${g.turn === g.you ? 'turn' : ''}"><div style="text-align:center"><div class="nm">${esc(me.name)} (you)</div><div class="coins">🪙 ${me.coins}</div>${cardsHtml(me, true, pickLose)}</div>
       ${g.phase === 'exchange' || g.phase === 'action' ? `<div style="flex:1;min-width:260px" class="prompt">${prompt}</div>` : ''}</div>
     </div>
-    <div class="side"><div class="row"><b style="flex:1">Room ${snap.code}</b><button id="help">Rules</button><button id="leave">Leave</button></div>
+    <div class="side"><div class="row"><b style="flex:1">Room ${snap.code}</b><button id="leave">Leave</button></div>
+      ${snap.host ? '<button id="restart">↻ Restart game</button>' : ''}
       ${voiceBtn(snap)}<div class="dim">Deck: ${g.deck} cards</div>
       ${snap.host ? snap.lobby.map((p, i) => (!p.bot && !p.connected && i ? `<button data-rep="${i}">Bot replaces ${esc(p.name)}</button>` : '')).join('') : ''}
-    </div></div>`;
+    </div></div>${rules()}`;
 
   const q = s => document.querySelectorAll(s);
   q('[data-act]').forEach(b => b.onclick = () => {
@@ -140,7 +136,6 @@ function game() {
   q('[data-cancel]').forEach(b => b.onclick = () => { uiTarget = null; game(); });
   q('.seat.target').forEach(s => s.onclick = () => move({ type: 'action', action: uiTarget, target: +s.dataset.p }));
   q('[data-mv]').forEach(b => b.onclick = () => move({ type: b.dataset.mv }));
-  q('[data-block]').forEach(b => b.onclick = () => move({ type: 'block', char: b.dataset.block }));
   q('.mine .card.pick').forEach(c => c.onclick = () => move({ type: 'lose', index: +c.dataset.i }));
   q('[data-ex]').forEach(c => c.onclick = () => {
     const i = +c.dataset.ex;
@@ -149,8 +144,8 @@ function game() {
   });
   q('[data-keep]').forEach(b => b.onclick = () => { const k = exchSel; exchSel = []; move({ type: 'keep', keep: k }); });
   q('[data-rep]').forEach(b => b.onclick = () => send('replace', { index: +b.dataset.rep }));
-  const again = document.getElementById('again'); if (again) again.onclick = () => send('lobby', {}).then(() => send('start', {}));
-  document.getElementById('help').onclick = help;
+  const again = document.getElementById('again'); if (again) again.onclick = () => send('restart', {});
+  const rs = document.getElementById('restart'); if (rs) rs.onclick = () => { if (confirm('Restart the game with the same players?')) send('restart', {}); };
   document.getElementById('leave').onclick = () => { leave(); render(); };
   const bar = document.getElementById('bar');
   if (bar) {
@@ -161,13 +156,10 @@ function game() {
   } else clearInterval(barTimer);
 }
 
-function help() {
-  const m = document.getElementById('modal');
-  document.getElementById('modal-body').innerHTML = `<p>Be the last player with influence (cards). Lose both cards and you're out. On your turn take <b>one</b> action; with 10+ coins you must Coup. Talk it out over voice chat: after someone declares an action, everyone gets a short timed window to hit <b>Challenge</b> (or <b>Block</b> if eligible). Anyone may challenge a character claim — if the claimer lacks the card they lose an influence, otherwise the challenger does. Some actions can be <b>blocked</b>, and blocks can be challenged too.</p>
-    <img src="img/actions-reference.png" alt="Actions"><img src="img/reactions-reference.png" alt="Reactions"><img src="img/reminders-reference.png" alt="Reminders"><button id="close">Close</button>`;
-  m.classList.remove('hidden');
-  document.getElementById('close').onclick = () => m.classList.add('hidden');
-  m.onclick = e => { if (e.target === m) m.classList.add('hidden'); };
+function rules() {
+  return `<section class="rules"><h2>Rules</h2>
+    <p class="dim">Be the last player with influence (cards). Talk it out over voice chat: after a declaration, everyone answers Challenge / No. Blocks work the same way.</p>
+    <img src="img/actions-reference.png" alt="Actions"><img src="img/reactions-reference.png" alt="Reactions"><img src="img/reminders-reference.png" alt="Reminders"></section>`;
 }
 
 let lastPhaseKey = '', barTimer = null;

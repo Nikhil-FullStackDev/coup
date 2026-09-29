@@ -157,8 +157,9 @@ async function api(req, res, url) {
     room.streams.get(i)?.forEach(r => r.end());
     room.players.splice(i, 1);
     room.streams.clear(); // clients reconnect with their new index
-  } else if (url.pathname === '/api/start') {
+  } else if (url.pathname === '/api/start' || url.pathname === '/api/restart') {
     if (room.players.length < 2) return json(res, 400, { error: 'Need 2+ players' });
+    room.reactTimers.forEach(clearTimeout); clearTimeout(room.botTimer);
     room.state = Coup.create(room.players, { windowMs: room.windowSec * 1000 }); room.reactKey = '';
   } else if (url.pathname === '/api/replace') { // hand a disconnected player over to a bot
     const i = Number(b.index), p = room.players[i];

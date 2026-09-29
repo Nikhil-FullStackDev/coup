@@ -132,12 +132,13 @@
     endTurn(s);
   }
 
-  function challenge(s, challenger, target, char, kind) {
+  function challenge(s, challenger, target, chars, kind) {
     const c = P(s, challenger), t = P(s, target);
-    log(s, `${c.name} challenges ${t.name}'s ${cap(char)}!`);
-    const idx = t.cards.findIndex(x => !x.dead && x.c === char);
+    const said = chars.map(cap).join('/');
+    log(s, `${c.name} challenges ${t.name}'s ${said}!`);
+    const idx = t.cards.findIndex(x => !x.dead && chars.includes(x.c));
     if (idx >= 0) {
-      log(s, `${t.name} shows ${cap(char)} — challenge fails. ${c.name} loses an influence.`);
+      log(s, `${t.name} shows ${cap(t.cards[idx].c)} — challenge fails. ${c.name} loses an influence.`);
       s.deck.push(t.cards[idx].c); shuffle(s.deck); t.cards[idx].c = s.deck.shift();
       loseInfluence(s, challenger, kind === 'action' ? 'toBlock' : 'cancel');
     } else {
@@ -159,26 +160,25 @@
   // Which reactions a player could make right now.
   function reactions(s, pid) {
     const p = P(s, pid);
-    if (s.phase !== 'window' || !p || !p.alive) return { challenge: false, block: [] };
+    const none = { challenge: false, block: false };
+    if (s.phase !== 'window' || !p || !p.alive) return none;
     const pd = s.pending;
     switch (pd.stage) {
-      case 'claim':
-        return { challenge: pid !== pd.actor && !!pd.claim, block: blockersOf(s, pd).includes(pid) ? ACTIONS[pd.action].blockBy : [] };
-      case 'block':
-        return { challenge: false, block: blockersOf(s, pd).includes(pid) ? ACTIONS[pd.action].blockBy : [] };
-      case 'bchallenge':
-        return { challenge: pid !== pd.block.by, block: [] };
+      case 'claim': return { challenge: pid !== pd.actor && !!pd.claim, block: false };
+      case 'block': return { challenge: false, block: blockersOf(s, pd).includes(pid) };
+      case 'bchallenge': return { challenge: pid !== pd.block.by, block: false };
     }
-    return { challenge: false, block: [] };
+    return none;
   }
 
   function respondents(s) {
-    return s.players.filter(p => { const r = reactions(s, p.id); return r.challenge || r.block.length; }).map(p => p.id);
+    return s.players.filter(p => { const r = reactions(s, p.id); return r.challenge || r.block; }).map(p => p.id);
   }
 
   function expire(s) {
     const pd = s.pending;
     if (pd.stage === 'bchallenge') { log(s, `The block stands.`); return endTurn(s); }
+    if (pd.stage === 'claim') return toBlock(s);
     resolve(s);
   }
 
@@ -199,29 +199,25 @@
       const r = reactions(s, pid);
       if (m.type === 'challenge') {
         if (!r.challenge) return err('Cannot challenge now');
-        if (pd.stage === 'bchallenge') challenge(s, pid, pd.block.by, pd.block.char, 'block');
-        else challenge(s, pid, pd.actor, pd.claim, 'action');
+        if (pd.stage === 'bchallenge') challenge(s, pid, pd.block.by, pd.block.chars, 'block');
+        else challenge(s, pid, pd.actor, [pd.claim], 'action');
         return { ok: true };
       }
       if (m.type === 'block') {
-        if (!r.block.includes(m.char)) return err('Cannot block with that');
-        pd.block = { by: pid, char: m.char };
-        log(s, `${pl.name} blocks with ${cap(m.char)}.`);
+        if (!r.block) return err('Cannot block now');
+        const chars = ACTIONS[pd.action].blockBy;
+        pd.block = { by: pid, chars };
+        log(s, `${pl.name} blocks (${chars.map(cap).join('/')}).`);
         openWindow(s, 'bchallenge', now);
         return { ok: true };
       }
-      if (m.type === 'pass') { // "No" — once every eligible player says no, resolve immediately
-        if (!r.challenge && !r.block.length) return err('Nothing to respond to');
+      if (m.type === 'pass') { // "No" — once every eligible player says no, move on immediately
+        if (!r.challenge && !r.block) return err('Nothing to respond to');
         if (!pd.passed.includes(pid)) pd.passed.push(pid);
         if (respondents(s).every(i => pd.passed.includes(i))) expire(s);
         return { ok: true };
       }
-      if (m.type === 'accept') { // the actor closes the window early
-        if (pid !== pd.actor) return err('Only the actor can do that');
-        expire(s);
-        return { ok: true };
-      }
-      return err('Challenge, block, or wait');
+      return err('Challenge or No');
     }
 
     if (!waitingOn(s).includes(pid)) return err('Not your turn to act');

@@ -56,3 +56,7 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .timer { width:min(360px,80%); height:8px; background:#15131c; border-radius:4px; overflow:hidden; }
 .timer #bar { height:100%; background:var(--gold); }
 button.big { font-size:20px; padding:14px 26px; }
+
+.rules { max-width:900px; margin:16px auto 40px; padding:0 12px; display:flex; flex-direction:column; gap:10px; }
+.rules img { width:100%; height:auto; border-radius:8px; }
+.rules h2 { margin:0; color:var(--gold); }
