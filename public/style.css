@@ -61,7 +61,7 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .lobbywrap .slider:nth-child(1) { order:0; }
 .lobbywrap .slider:nth-child(2) { order:2; }
 .lobbywrap .sl-body { flex:1; height:auto; min-height:0; }
-.game .info { position:sticky; top:12px; align-self:start; }
+.game .info { --sh:min(560px, calc(100vh - 30px)); position:sticky; top:12px; align-self:start; }
 .slider { padding:0; }
 .sl-head { display:flex; justify-content:space-between; align-items:center; padding:0 2px 2px; color:var(--gold); }
 .dots { display:flex; gap:5px; }
@@ -87,3 +87,15 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .wline { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
 .wline rect { x:2px; y:2px; width:calc(100% - 4px); height:calc(100% - 4px); rx:16px; fill:none; stroke:var(--green); stroke-width:4; stroke-linecap:round; stroke-dasharray:100; stroke-dashoffset:0; animation-name:drain; animation-timing-function:linear; animation-fill-mode:forwards; }
 @keyframes drain { 0% { stroke-dashoffset:0; stroke:var(--green); } 70% { stroke:var(--green); } 85% { stroke:var(--gold); } 100% { stroke-dashoffset:100; stroke:var(--red); } }
+
+.hand { display:flex; align-items:center; gap:4px; }
+.hand .hnav { display:none; }
+.htrack { display:flex; gap:6px; }
+@media (max-width:640px) {
+  .mine { flex-direction:column; }
+  .hand { width:100%; justify-content:center; }
+  .hand .hnav { display:block; }
+  .htrack { width:200px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; justify-content:flex-start; margin:0; }
+  .htrack::-webkit-scrollbar { display:none; }
+  .me .htrack .card { flex:0 0 200px; width:200px; scroll-snap-align:center; }
+}

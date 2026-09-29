@@ -70,7 +70,21 @@ function lobby() {
 }
 
 function cardsHtml(p, mine, pick) {
-  return `<div class="cards">${p.cards.map((c, i) => `<div class="card ${c.dead ? 'dead' : ''} ${pick && !c.dead ? 'pick' : ''}" data-i="${i}" title="${c.c ? cap(c.c) : ''}" style="background-image:url(${img(c.c)})"></div>`).join('')}</div>`;
+  const cards = p.cards.map((c, i) => `<div class="card ${c.dead ? 'dead' : ''} ${pick && !c.dead ? 'pick' : ''}" data-i="${i}" title="${c.c ? cap(c.c) : ''}" style="background-image:url(${img(c.c)})"></div>`).join('');
+  if (!mine) return `<div class="cards">${cards}</div>`;
+  // Own hand: plain row on desktop, swipeable slider on phones.
+  return `<div class="hand"><button class="chev hnav" data-dir="-1" aria-label="Previous card">‹</button><div class="cards htrack">${cards}</div><button class="chev hnav" data-dir="1" aria-label="Next card">›</button></div>`;
+}
+let handPos = 0;
+function initHand() {
+  const t = document.querySelector('.htrack'); if (!t) return;
+  const step = () => (t.firstElementChild ? t.firstElementChild.getBoundingClientRect().width + 6 : t.clientWidth);
+  t.scrollLeft = handPos * step();
+  t.onscroll = () => { handPos = Math.round(t.scrollLeft / step()); };
+  document.querySelectorAll('.hnav').forEach(b => b.onclick = () => {
+    const n = t.children.length, cur = Math.round(t.scrollLeft / step());
+    t.scrollTo({ left: ((cur + +b.dataset.dir + n) % n) * step(), behavior: 'smooth' });
+  });
 }
 
 function describe(g) {
@@ -128,7 +142,7 @@ function game() {
     <div class="mine me ${g.turn === g.you ? 'turn' : ''}"><div style="text-align:center"><div class="nm">${esc(me.name)} (you)</div><div class="coins">🪙 ${me.coins}</div>${cardsHtml(me, true, pickLose)}</div>
       ${g.phase === 'exchange' || g.phase === 'action' ? `<div style="flex:1;min-width:260px" class="prompt">${prompt}</div>` : ''}</div>
     </div>
-    ${info()}</div>`;
+    ${info(true)}</div>`;
 
   const q = s => document.querySelectorAll(s);
   q('[data-act]').forEach(b => b.onclick = () => {
@@ -149,7 +163,7 @@ function game() {
   const again = document.getElementById('again'); if (again) again.onclick = () => send('restart', {});
   const rs = document.getElementById('restart'); if (rs) rs.onclick = () => { if (confirm('Restart the game with the same players?')) send('restart', {}); };
   document.getElementById('leave').onclick = () => { leave(); render(); };
-  initSliders();
+  initSliders(); initHand();
 }
 
 const sliderPos = {};
@@ -159,8 +173,8 @@ function slider(id, title, imgs) {
     <div class="track">${imgs.map(([src, alt]) => `<div class="slide"><img src="${src}" alt="${alt}"></div>`).join('')}</div>
     <button class="chev" data-dir="1" aria-label="Next">›</button></div></section>`;
 }
-function info() {
-  return `<aside class="info">${slider('roles', 'Roles', Coup.CHARS.map(c => [`img/${c}.png`, cap(c)]))}
+function info(rulesOnly) {
+  return `<aside class="info">${rulesOnly ? '' : slider('roles', 'Roles', Coup.CHARS.map(c => [`img/${c}.png`, cap(c)]))}
     ${slider('rules', 'Rules', [['img/actions-reference.png', 'Actions'], ['img/reactions-reference.png', 'Reactions'], ['img/reminders-reference.png', 'Reminders']])}</aside>`;
 }
 // Re-attach slider behaviour after each render and keep each slider on the slide the player was reading.
