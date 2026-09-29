@@ -53,11 +53,12 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .bar a { text-decoration:none; }
 
 
-.lobbywrap { display:flex; flex-direction:column; gap:16px; justify-content:flex-start; align-items:center; padding:12px; flex-wrap:wrap; }
-.lobbywrap .center { margin:2vh 0 0; width:420px; max-width:100%; }
+.lobbywrap { display:flex; flex-direction:column; gap:16px; justify-content:flex-start; align-items:center; padding:12px; height:100vh; box-sizing:border-box; overflow:auto; }
+.lobbywrap .center { margin:0; flex:0 0 auto; padding:14px 24px; gap:8px; width:420px; max-width:100%; }
 .info { --sh:min(500px, calc((100vh - 30px) / 2)); display:flex; flex-direction:column; gap:10px; width:340px; max-width:100%; }
-.lobbywrap .info { --sh:500px; flex-direction:row; flex-wrap:wrap; justify-content:center; width:auto; gap:24px; }
-.lobbywrap .slider { width:340px; max-width:100%; }
+.lobbywrap .info { flex:1 1 0; min-height:220px; flex-direction:row; justify-content:center; width:auto; gap:24px; }
+.lobbywrap .slider { width:340px; max-width:100%; display:flex; flex-direction:column; min-height:0; }
+.lobbywrap .sl-body { flex:1; height:auto; min-height:0; }
 .game .info { position:sticky; top:12px; align-self:start; }
 .slider { padding:0; }
 .sl-head { display:flex; justify-content:space-between; align-items:center; padding:0 2px 2px; color:var(--gold); }
@@ -71,4 +72,4 @@ input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(
 .slide { flex:0 0 100%; height:100%; scroll-snap-align:center; }
 .slide { min-height:0; }
 .slide img { width:100%; height:100%; object-fit:contain; display:block; }
-@media (max-width:640px) { .game { grid-template-columns:1fr; } .game .info { position:static; } .info { --sh:420px; width:100%; } }
+@media (max-width:640px) { .lobbywrap { height:auto; min-height:100vh; } .lobbywrap .info { flex-direction:column; align-items:center; } .lobbywrap .slider { height:420px; } .game { grid-template-columns:1fr; } .game .info { position:static; } .info { --sh:420px; width:100%; } }
