@@ -34,7 +34,7 @@ function home() {
     <button class="primary" id="create">Create room</button>
     <div class="row"><input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase"><button id="join">Join</button></div>
     <div class="err">${esc(lastErr)}</div>
-    </div>${rules()}`;
+    </div>`;
   const nm = () => { const v = document.getElementById('name').value.trim(); localStorage.setItem('coup-name', v); return v; };
   const go = p => async () => { try { setSession(await p()); lastErr = ''; } catch (e) { lastErr = e.message; home(); } };
   document.getElementById('create').onclick = go(() => post('create', { name: nm() }));
@@ -54,7 +54,7 @@ function lobby() {
       <div class="row"><span class="dim" style="flex:1">Challenge window: <b id="wl">${s.windowSec}</b>s</span><input id="win" type="range" min="4" max="30" value="${s.windowSec}" style="flex:2"></div>
       <div class="row"><button id="bot" ${s.lobby.length >= 6 ? 'disabled' : ''}>+ Add bot</button>
       <button class="primary" id="start" ${s.lobby.length < 2 ? 'disabled' : ''}>Start game</button></div>` : '<div class="dim" style="text-align:center">Waiting for host to start…</div>'}
-    <div class="row"><button id="leave">Leave</button></div></div>${rules()}`;
+    <div class="row"><button id="leave">Leave</button></div></div>`;
   document.getElementById('leave').onclick = () => { leave(); render(); };
   if (s.host) {
     document.getElementById('setvoice').onclick = () => send('settings', { voice: document.getElementById('voice').value });
