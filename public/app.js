@@ -126,7 +126,7 @@ function game() {
       ${snap.host ? '<button id="restart">↻ Restart game</button>' : ''}
       ${voiceBtn(snap)}<div class="dim">Deck: ${g.deck} cards</div>
       ${snap.host ? snap.lobby.map((p, i) => (!p.bot && !p.connected && i ? `<button data-rep="${i}">Bot replaces ${esc(p.name)}</button>` : '')).join('') : ''}
-    </div></div>${rules()}`;
+    ${rules()}</div></div>`;
 
   const q = s => document.querySelectorAll(s);
   q('[data-act]').forEach(b => b.onclick = () => {
@@ -157,8 +157,7 @@ function game() {
 }
 
 function rules() {
-  return `<section class="rules"><h2>Rules</h2>
-    <p class="dim">Be the last player with influence (cards). Talk it out over voice chat: after a declaration, everyone answers Challenge / No. Blocks work the same way.</p>
+  return `<section class="rules"><b>Rules</b>
     <img src="img/actions-reference.png" alt="Actions"><img src="img/reactions-reference.png" alt="Reactions"><img src="img/reminders-reference.png" alt="Reminders"></section>`;
 }
 
