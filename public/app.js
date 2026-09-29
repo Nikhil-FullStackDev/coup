@@ -34,11 +34,12 @@ function home() {
     <button class="primary" id="create">Create room</button>
     <div class="row"><input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase"><button id="join">Join</button></div>
     <div class="err">${esc(lastErr)}</div>
-    </div>${roles()}${rules()}</div>`;
+    </div>${info()}</div>`;
   const nm = () => { const v = document.getElementById('name').value.trim(); localStorage.setItem('coup-name', v); return v; };
   const go = p => async () => { try { setSession(await p()); lastErr = ''; } catch (e) { lastErr = e.message; home(); } };
   document.getElementById('create').onclick = go(() => post('create', { name: nm() }));
   document.getElementById('join').onclick = go(() => post('join', { name: nm(), code: document.getElementById('code').value }));
+  initSliders();
 }
 
 const voiceBtn = s => (s.voice ? `<a href="${esc(s.voice)}" target="_blank" rel="noopener noreferrer"><button style="width:100%">🎙 Join voice chat</button></a>` : '');
@@ -54,7 +55,8 @@ function lobby() {
       <div class="row"><span class="dim" style="flex:1">Challenge window: <b id="wl">${s.windowSec}</b>s</span><input id="win" type="range" min="4" max="30" value="${s.windowSec}" style="flex:2"></div>
       <div class="row"><button id="bot" ${s.lobby.length >= 6 ? 'disabled' : ''}>+ Add bot</button>
       <button class="primary" id="start" ${s.lobby.length < 2 ? 'disabled' : ''}>Start game</button></div>` : '<div class="dim" style="text-align:center">Waiting for host to start…</div>'}
-    <div class="row"><button id="leave">Leave</button></div></div>${roles()}${rules()}</div>`;
+    <div class="row"><button id="leave">Leave</button></div></div>${info()}</div>`;
+  initSliders();
   document.getElementById('leave').onclick = () => { leave(); render(); };
   if (s.host) {
     document.getElementById('setvoice').onclick = () => send('settings', { voice: document.getElementById('voice').value });
@@ -126,7 +128,7 @@ function game() {
     <div class="mine me ${g.turn === g.you ? 'turn' : ''}"><div style="text-align:center"><div class="nm">${esc(me.name)} (you)</div><div class="coins">🪙 ${me.coins}</div>${cardsHtml(me, true, pickLose)}</div>
       ${g.phase === 'exchange' || g.phase === 'action' ? `<div style="flex:1;min-width:260px" class="prompt">${prompt}</div>` : ''}</div>
     </div>
-    <div class="side">${rules()}</div></div>`;
+    ${info()}</div>`;
 
   const q = s => document.querySelectorAll(s);
   q('[data-act]').forEach(b => b.onclick = () => {
@@ -147,6 +149,7 @@ function game() {
   const again = document.getElementById('again'); if (again) again.onclick = () => send('restart', {});
   const rs = document.getElementById('restart'); if (rs) rs.onclick = () => { if (confirm('Restart the game with the same players?')) send('restart', {}); };
   document.getElementById('leave').onclick = () => { leave(); render(); };
+  initSliders();
   const bar = document.getElementById('bar');
   if (bar) {
     const end = Date.now() + +bar.dataset.ms, total = +bar.dataset.total;
@@ -156,13 +159,28 @@ function game() {
   } else clearInterval(barTimer);
 }
 
-function roles() {
-  return `<section class="roles">${Coup.CHARS.map(c => `<img src="img/${c}.png" alt="${cap(c)}" title="${cap(c)}">`).join('')}</section>`;
+const sliderPos = {};
+function slider(id, title, imgs) {
+  return `<section class="slider" data-s="${id}"><div class="sl-head"><b>${title}</b><span class="dots">${imgs.map(() => '<i></i>').join('')}</span></div>
+    <div class="sl-body"><button class="chev" data-dir="-1" aria-label="Previous">‹</button>
+    <div class="track">${imgs.map(([src, alt]) => `<div class="slide"><img src="${src}" alt="${alt}"></div>`).join('')}</div>
+    <button class="chev" data-dir="1" aria-label="Next">›</button></div></section>`;
 }
-
-function rules() {
-  return `<section class="rules">
-    <img src="img/actions-reference.png" alt="Actions"><img src="img/reactions-reference.png" alt="Reactions"><img src="img/reminders-reference.png" alt="Reminders"></section>`;
+function info() {
+  return `<aside class="info">${slider('roles', 'Roles', Coup.CHARS.map(c => [`img/${c}.png`, cap(c)]))}
+    ${slider('rules', 'Rules', [['img/actions-reference.png', 'Actions'], ['img/reactions-reference.png', 'Reactions'], ['img/reminders-reference.png', 'Reminders']])}</aside>`;
+}
+// Re-attach slider behaviour after each render and keep each slider on the slide the player was reading.
+function initSliders() {
+  document.querySelectorAll('.slider').forEach(sl => {
+    const id = sl.dataset.s, track = sl.querySelector('.track'), dots = sl.querySelectorAll('.dots i');
+    const n = dots.length, mark = i => dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    const go = i => { track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' }); };
+    track.scrollLeft = (sliderPos[id] || 0) * track.clientWidth;
+    mark(sliderPos[id] || 0);
+    track.onscroll = () => { const i = Math.round(track.scrollLeft / track.clientWidth); if (i !== sliderPos[id]) { sliderPos[id] = i; mark(i); } };
+    sl.querySelectorAll('.chev').forEach(b => b.onclick = () => go((Math.round(track.scrollLeft / track.clientWidth) + +b.dataset.dir + n) % n));
+  });
 }
 
 let lastPhaseKey = '', barTimer = null;
