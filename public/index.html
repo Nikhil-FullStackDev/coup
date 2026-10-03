@@ -2,14 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121a">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Play Coup, the bluffing card game, online with friends or AI bots.">
 <title>Coup Online</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
+<script defer src="game.js"></script>
+<script defer src="app.js"></script>
 </head>
 <body>
 <div id="app"></div>
-<div id="toast" class="hidden"></div>
-<script src="game.js"></script>
-<script src="app.js"></script>
+<div id="net" class="hidden" role="status">Reconnecting…</div>
+<div id="toast" class="hidden" role="status" aria-live="polite"></div>
+<div id="zoom" class="hidden" role="dialog" aria-modal="true" aria-label="Card"><img alt=""></div>
+<noscript><p style="text-align:center;padding:24px">Coup needs JavaScript.</p></noscript>
 </body>
 </html>
