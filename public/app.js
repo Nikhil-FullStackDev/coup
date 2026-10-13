@@ -30,7 +30,7 @@ if (invite && session && session.code !== invite) session = null; // invite link
 let snap = null, es = null, lastErr = '';
 let uiTarget = null, exchSel = [], busy = false, logOpen = false, lastPhaseKey = '', lastNeed = '';
 let seenLog = -1, clockEnd = 0, clockKind = '', retryT = 0, retryN = 0, netT = 0, toastT = 0;
-let voiceDirty = false, winDrag = false, implicitSubmit = false;
+let winDrag = false, implicitSubmit = false;
 
 // ---------- network ----------
 async function post(path, body) {
@@ -176,7 +176,6 @@ function initSliders() {
 let resizeT = 0;
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => document.querySelectorAll('.slider').forEach(s => s.sync && s.sync()), 150); });
 
-const voiceLink = (s, cls = '') => (s.voice ? `<a class="btn ${cls}" href="${esc(s.voice)}" target="_blank" rel="noopener noreferrer">🎙 Join voice chat</a>` : '');
 
 // ---------- home ----------
 function home() {
@@ -225,8 +224,7 @@ function loading() {
 }
 
 // ---------- lobby ----------
-const HOST_HTML = `<form class="row" id="voiceform" novalidate><input id="voice" type="url" inputmode="url" placeholder="Voice chat link (Discord / Meet / WhatsApp…)" aria-label="Voice chat link" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><button type="submit">Set</button></form>
-  <label class="row slider-row"><span class="dim">Challenge window: <b id="wl"></b>s</span><input id="win" type="range" min="4" max="30" step="1" aria-label="Challenge window in seconds"></label>`;
+const HOST_HTML = `<label class="row slider-row"><span class="dim">Challenge window: <b id="wl"></b>s</span><input id="win" type="range" min="4" max="30" step="1" aria-label="Challenge window in seconds"></label>`;
 
 function lobby() {
   const s = snap;
@@ -235,7 +233,6 @@ function lobby() {
       <div class="code" id="l-code"></div>
       <button type="button" data-cmd="share">🔗 Share invite link</button>
       <ul class="plist" id="l-list"></ul>
-      <div id="l-voice"></div>
       <div id="l-host" class="stack"></div>
       <div id="l-ctrl" class="stack"></div>
       <button type="button" class="ghost" data-cmd="leave">Leave room</button>
@@ -245,11 +242,8 @@ function lobby() {
       <span class="pn">${p.bot ? '🤖 ' : ''}${esc(short(p.name))}${i === s.you ? ' <em class="dim">(you)</em>' : ''}${p.host ? ' <span class="star" title="Host">★</span>' : ''}</span>
       <span class="pst">${p.connected ? '' : '<span class="dim">offline</span>'}${s.host && i !== s.you ? `<button type="button" data-kick="${i}" aria-label="Remove ${esc(p.name)}">Remove</button>` : ''}</span></li>`).join('') +
     (s.lobby.length < 6 ? `<li class="open dim">${6 - s.lobby.length} open seat${s.lobby.length === 5 ? '' : 's'}</li>` : ''));
-  patch($('l-voice'), voiceLink(s, 'wide'));
   patch($('l-host'), s.host ? HOST_HTML : '');
   if (s.host) {
-    const v = $('voice');
-    if (document.activeElement !== v && !voiceDirty && v.value !== s.voice) v.value = s.voice;
     if (!winDrag) { $('win').value = s.windowSec; $('wl').textContent = s.windowSec; }
   }
   patch($('l-ctrl'), s.host
@@ -346,7 +340,6 @@ function game() {
   screen('game', `<div class="game"><div class="main">
       <header class="bar">
         <span class="room" id="g-room"></span>
-        <a id="g-voice" class="btn icon hidden" target="_blank" rel="noopener noreferrer" aria-label="Join voice chat">🎙<span class="lbl">Voice</span></a>
         <button type="button" class="rules-btn" data-cmd="rules">Rules</button>
         <details class="menu" id="g-menu"><summary class="btn icon" aria-label="Game menu">⋯</summary><div class="pop" id="g-pop"></div></details>
       </header>
@@ -362,9 +355,6 @@ function game() {
 
   // top bar
   patch($('g-room'), `<b title="Room code"><span class="lbl">Room </span>${esc(snap.code)}</b><span class="dim">Deck ${g.deck}</span>`);
-  const v = $('g-voice');
-  if (snap.voice && v.getAttribute('href') !== snap.voice) v.setAttribute('href', snap.voice);
-  v.classList.toggle('hidden', !snap.voice);
   patch($('g-pop'), menuHtml());
 
   // opponents
@@ -502,18 +492,9 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('submit', e => {
   if (e.target.id === 'homeform') return submitHome(e);
-  if (e.target.id === 'voiceform') {
-    e.preventDefault();
-    const v = $('voice');
-    let link = v.value.trim();
-    if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link; // people paste "discord.gg/…"
-    v.value = link;
-    if (session) post('settings', withRoom({ voice: link })).then(() => { voiceDirty = false; v.blur(); }, err => toast(err.message));
-  }
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'code') e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-  if (e.target.id === 'voice') voiceDirty = true;
   if (e.target.id === 'win') { winDrag = true; $('wl').textContent = e.target.value; }
 });
 document.addEventListener('change', e => {
