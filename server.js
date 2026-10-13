@@ -100,7 +100,7 @@ const cleanName = n => String(n || '').replace(/[^\w \-']/g, '').replace(/\s+/g,
 function newRoom(hostName) {
   const now = Date.now();
   const room = {
-    code: makeCode(), players: [], host: null, state: null, voice: '', windowSec: 10,
+    code: makeCode(), players: [], host: null, state: null, windowSec: 10,
     created: now, lastSeen: now, everConnected: false, errors: 0,
     botTimer: null, botKey: '', reactKey: '', reactTimers: [],
   };
@@ -157,7 +157,7 @@ function checkHost(room, now) {
 // The room part is the same for everyone, so it is serialized once per broadcast.
 function sharedJson(room) {
   return JSON.stringify({
-    code: room.code, voice: room.voice, windowSec: room.windowSec,
+    code: room.code, windowSec: room.windowSec,
     lobby: room.players.map(p => ({ name: p.name, bot: p.bot, connected: isConnected(p), host: p === room.host })),
   }).slice(1, -1);
 }
@@ -391,11 +391,6 @@ async function api(req, res, url) {
     makeBot(room, target);
   } else if (url.pathname === '/api/settings') {
     if (room.state) return json(res, 400, { error: 'Game running' });
-    if (b.voice !== undefined) {
-      const v = String(b.voice).trim().slice(0, 300);
-      if (v && !/^https?:\/\/[^\s"'<>]+$/i.test(v)) return json(res, 400, { error: 'Voice link must start with http(s)://' });
-      room.voice = v;
-    }
     if (b.windowSec !== undefined) room.windowSec = Math.min(30, Math.max(4, Math.round(Number(b.windowSec)) || 10));
   } else if (url.pathname === '/api/lobby') { // back to lobby after a game
     resetTimers(room);
