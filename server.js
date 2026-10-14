@@ -404,9 +404,16 @@ function route(req, res) {
   let url;
   try { url = new URL(req.url, 'http://x'); } catch { return text(res, 400, 'Bad request'); }
   if (url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
+  if (chat.handle(req, res, url)) return;
   if (url.pathname.startsWith('/api/')) return api(req, res, url).catch(e => fail(res, e));
   serveStatic(req, res, url.pathname);
 }
+
+// In-room chat (shared module): its own SSE stream + POST endpoint, independent of the game's connection.
+const chat = require('./chat-server.js')({
+  room: code => rooms.get(code),
+  who: (room, token) => { const p = room.players.find(q => q.token && q.token === token); return p ? p.name : null; },
+});
 
 const server = http.createServer((req, res) => {
   try { route(req, res); } catch (e) { fail(res, e); }
