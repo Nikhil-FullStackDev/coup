@@ -503,3 +503,6 @@ document.addEventListener('change', e => {
 
 if (session) connect();
 render();
+
+// In-room chat with emotes (shared chat.js).
+if (window.Chat) Chat.useSSE({ session: () => session, bottom: 84 });
