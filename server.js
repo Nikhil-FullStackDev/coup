@@ -113,7 +113,13 @@ function addPlayer(room, name, bot) {
   room.players.push(p);
   return p;
 }
-const isConnected = p => p.bot || p.streams.size > 0;
+// Presence: online while a stream is open, and for a short grace after joining or after the last stream drops,
+// so joining or a network blip never flashes "offline".
+const PRESENCE_GRACE_MS = 12000;
+const isConnected = p => p.bot || p.streams.size > 0 || (p.offlineSince != null && Date.now() - p.offlineSince < PRESENCE_GRACE_MS);
+function presenceLater(room) {
+  setTimeout(() => { if (rooms.get(room.code) === room) broadcast(room); }, PRESENCE_GRACE_MS + 300).unref();
+}
 const hasStreams = room => room.players.some(p => p.streams.size);
 const endStreams = p => { p.streams.forEach(r => r.end()); p.streams.clear(); };
 // Seats the server plays: bots, and humans who have been disconnected for a while.
@@ -320,7 +326,7 @@ function events(req, res, url) {
   res.on('close', safe(() => {
     if (!p.streams.delete(res) || p.streams.size) return;
     p.offlineSince = room.lastSeen = Date.now();
-    if (rooms.get(room.code) === room && room.players.includes(p)) broadcast(room);
+    if (rooms.get(room.code) === room && room.players.includes(p)) { broadcast(room); presenceLater(room); }
   }));
   // Presence changed: everyone needs the new "connected" flag. Otherwise only this client needs a snapshot.
   if (wasOffline) broadcast(room);
@@ -349,6 +355,7 @@ async function api(req, res, url) {
     const p = addPlayer(room, cleanName(b.name), false);
     pickHost(room);
     broadcast(room);
+    presenceLater(room);
     return json(res, 200, { code: room.code, token: p.token });
   }
   if (!room) return json(res, 404, { error: 'Room not found' });
