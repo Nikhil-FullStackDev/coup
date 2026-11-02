@@ -187,7 +187,8 @@ function home() {
       <button type="submit" class="${invite ? '' : 'primary'}" data-go="create">Create a room</button>
       <div class="or dim"><span>or join a friend</span></div>
       <div class="row"><input id="code" maxlength="4" placeholder="Room code" aria-label="Room code" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
-        <button type="submit" class="${invite ? 'primary' : ''}" data-go="join">Join</button></div>
+        <button type="submit" class="${invite ? 'primary' : ''}" data-go="join">Join</button>
+        <button type="submit" data-go="watch" title="Watch a game as a spectator: you see the table but cannot play">👁 Watch</button></div>
       <div class="err" id="herr" role="alert"></div>
     </form>${info(false)}</div>`, () => {
     $('name').value = store.get('coup-name') || '';
@@ -204,11 +205,11 @@ async function submitHome(e) {
   // Enter / "Go" on the keyboard joins when a code is typed, otherwise creates.
   const how = implicitSubmit || !e.submitter ? (code ? 'join' : 'create') : e.submitter.dataset.go;
   implicitSubmit = false;
-  if (how === 'join' && code.length !== 4) { lastErr = 'Enter the 4-letter room code.'; $('herr').textContent = lastErr; $('code').focus(); return; }
+  if ((how === 'join' || how === 'watch') && code.length !== 4) { lastErr = 'Enter the 4-letter room code.'; $('herr').textContent = lastErr; $('code').focus(); return; }
   const btns = f.querySelectorAll('button');
   btns.forEach(b => { b.disabled = true; });
   try {
-    const r = await post(how, how === 'join' ? { name, code } : { name });
+    const r = await post(how === 'watch' ? 'join' : how, how === 'join' ? { name, code } : how === 'watch' ? { name, code, watch: true } : { name });
     lastErr = '';
     if (document.activeElement) document.activeElement.blur();
     setSession(r);
@@ -249,7 +250,7 @@ function lobby() {
   patch($('l-ctrl'), s.host
     ? `<div class="row2"><button type="button" data-cmd="addbot" ${s.lobby.length >= 6 ? 'disabled' : ''}>+ Add bot</button><button type="button" class="primary" data-cmd="start" ${s.lobby.length < 2 ? 'disabled' : ''}>Start game</button></div>
        ${s.lobby.length < 2 ? '<div class="dim tc small">Invite a friend or add a bot to start.</div>' : ''}`
-    : '<div class="dim tc">Waiting for the host to start…</div>');
+    : `${Watch.ribbon(snap)}<div class="dim tc">Waiting for the host to start…</div>`);
   document.title = `Coup · Room ${s.code}`;
 }
 async function share() {
@@ -336,7 +337,7 @@ function menuHtml() {
 }
 
 function game() {
-  const g = snap.game, me = g.players[g.you], pd = g.pending;
+  const g = snap.game, me = g.players[g.you], pd = g.pending, watch = !!snap.watch; // a spectator has no seat: `me` is undefined
   screen('game', `<div class="game"><div class="main">
       <header class="bar">
         <span class="room" id="g-room"></span>
@@ -354,7 +355,7 @@ function game() {
     </div>${info(true)}</div>`, initSliders);
 
   // top bar
-  patch($('g-room'), `<b title="Room code"><span class="lbl">Room </span>${esc(snap.code)}</b><span class="dim">Deck ${g.deck}</span>`);
+  patch($('g-room'), `<b title="Room code"><span class="lbl">Room </span>${esc(snap.code)}</b><span class="dim">Deck ${g.deck}</span> ${Watch.chip(snap)}`);
   patch($('g-pop'), menuHtml());
 
   // opponents
@@ -384,9 +385,10 @@ function game() {
   // my hand
   const pickLose = g.phase === 'lose' && g.waiting.includes(g.you);
   const meEl = $('g-me');
-  meEl.classList.toggle('turn', g.turn === g.you && g.phase !== 'over' && me.alive);
-  meEl.classList.toggle('out', !me.alive);
-  patch(meEl, `<div class="who"><div class="nm">${esc(short(me.name))} <em class="dim">(you)</em></div><div class="coins big">🪙 ${me.coins}</div>${me.alive ? '' : '<div class="dim small">Out</div>'}</div>
+  meEl.classList.toggle('hidden', watch);
+  if (!watch) meEl.classList.toggle('turn', g.turn === g.you && g.phase !== 'over' && me.alive);
+  if (!watch) meEl.classList.toggle('out', !me.alive);
+  if (!watch) patch(meEl, `<div class="who"><div class="nm">${esc(short(me.name))} <em class="dim">(you)</em></div><div class="coins big">🪙 ${me.coins}</div>${me.alive ? '' : '<div class="dim small">Out</div>'}</div>
     <div class="hand">${me.cards.length ? me.cards.map((c, i) => card(c, pickLose && !c.dead ? ' pick' : '', pickLose && !c.dead ? `data-lose="${i}" role="button" tabindex="0"` : '')).join('') : '<div class="dim small">Choosing cards…</div>'}</div>`);
 
   // dock: timer, banner, controls
@@ -398,11 +400,11 @@ function game() {
   }
   clockEnd = t ? performance.now() + t.left : 0; clockKind = t ? t.kind : '';
   tickSecs();
-  patch($('g-banner'), describe(g));
-  patch($('g-ctl'), controls(g, me));
+  patch($('g-banner'), Watch.ribbon(snap) + describe(g));
+  patch($('g-ctl'), watch ? '' : controls(g, me));
 
   // a buzz and a title cue when the game needs this player
-  const need = me.alive && (g.waiting.includes(g.you) || (g.phase === 'window' && !g.can.passed && (g.can.block || (pd && pd.target === g.you)))) ? lastPhaseKey : '';
+  const need = !watch && me.alive && (g.waiting.includes(g.you) || (g.phase === 'window' && !g.can.passed && (g.can.block || (pd && pd.target === g.you)))) ? lastPhaseKey : '';
   const activated = !navigator.userActivation || navigator.userActivation.hasBeenActive; // Chrome blocks vibrate before a tap
   if (need && need !== lastNeed && activated && document.visibilityState === 'visible' && navigator.vibrate) navigator.vibrate(30);
   lastNeed = need;
@@ -481,7 +483,7 @@ function command(c) {
     case 'restart': if (confirm('Restart the game with the same players?')) send('restart', {}); break;
     case 'lobby': if (snap.game.phase === 'over' || confirm('End this game and go back to the lobby?')) send('lobby', {}); break;
     case 'leave':
-      if (!snap || !snap.game || snap.game.phase === 'over' || !snap.game.players[snap.game.you].alive || confirm('Leave the game? A bot will take your seat.')) leaveRoom();
+      if (!snap || !snap.game || snap.game.phase === 'over' || snap.watch || !snap.game.players[snap.game.you].alive || confirm('Leave the game? A bot will take your seat.')) leaveRoom();
       break;
   }
 }
